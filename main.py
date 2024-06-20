@@ -199,7 +199,7 @@ def show_menu():
 #조작 방법등을 표시
 def show_controls():
     font = pygame.font.SysFont(None, 32)
-    text = ["                                                              Sokoban Rules","1. Objective: Push all the boxes into the holes.", "2. How to play: You can move player character using arrow keys.", "3. Winning Condition: Fill all the holes with boxes to win.", "4. New Map: A new map will be generated automatically a few seconds after you win.", "                                              To return to main menu, Press 'Esc'"]
+    text = ["                                                              Sokoban Rules","1. Objective: Push all the boxes into the holes.", "2. How to play: You can move player character using arrow keys.", "3. Winning Condition: Fill all the holes with boxes to win.", "4. New Map: A new map will be generated automatically a few seconds after you win.", "5. Undo: Press Backspace to undo last movement.", "                                              To return to main menu, Press 'Esc'"]
     label = []
     position = [screen_width // 2 - 460, screen_height // 2 - 250]
     for line in text:
