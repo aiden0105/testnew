@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 from collections import deque
+import time
 
 # Pygame 초기화
 pygame.init()
@@ -49,6 +50,49 @@ level = []
 player_pos = [0, 0]
 goal_count = 0
 player_history = deque()  # 플레이어의 위치 정보 저장
+
+########################
+######## PHASE 2 #######
+########################
+# 게임 타이머 및 난이도
+game_timer = 0
+start_time = 0
+difficulty = 'easy'  # 기본 난이도 설정
+# 플레이어가 게임을 패배했는지 판단
+def is_defeat():
+    font = pygame.font.SysFont(None, 100)
+    message = font.render("Time's Up! You Lose!", True, (255, 0, 0))
+    screen.blit(message, (screen_width // 2 - 300, screen_height // 2 - 50))
+    pygame.display.flip()
+    pygame.time.wait(2000)
+    reset_game()
+# 남은 시간(타이머) 표시
+def display_timer(remaining_time):
+    font = pygame.font.SysFont(None, 50)
+    timer_message = font.render(f"Time left: {remaining_time} seconds", True, (0, 0, 0))
+    screen.blit(timer_message, (10, 10))
+# 난이도 선택 표시
+def choose_difficulty():
+    global game_timer, difficulty
+    print("Choose difficulty: Easy (1), Normal (2), Hard (3)")
+    choice = input("Enter your choice (1-3): ")
+    if choice == '1':
+        game_timer = 60
+        difficulty = 'easy'
+    elif choice == '2':
+        game_timer = 30
+        difficulty = 'normal'
+    elif choice == '3':
+        game_timer = 15
+        difficulty = 'hard'
+    else:
+        print("Invalid choice, defaulting to Easy.")
+        game_timer = 60  # 기본 설정은 쉬움
+
+    reset_game()  # 게임 초기화와 함께 타이머 시작
+########################
+######## PHASE 2 #######
+########################
 
 #비어있는 맵을 생성
 def create_empty_map(width, height):
@@ -210,10 +254,17 @@ def show_controls():
 
 # 메인 루프
 def run():
-    global level
-    global game_state
+    global level, game_state, start_time
     running = True
+    clock = pygame.time.Clock()
+    choose_difficulty()  # 플레이어의 난이도 선택 및 타이머 설정
+    start_time = time.time()
+
     while running:
+        current_time = time.time()
+        elapsed_time = current_time - start_time
+        remaining_time = max(0, int(game_timer - elapsed_time))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -242,10 +293,6 @@ def run():
                     elif event.key == pygame.K_RIGHT:
                         move_player(1, 0)
                         is_win()
-                    ########################
-                    ######## PHASE 2 #######
-                    ########################
-                    # 행동 취소
                     elif event.key == pygame.K_BACKSPACE:
                         if player_history:
                             last_pos = player_history.pop()
@@ -253,9 +300,7 @@ def run():
                             level[current_pos[1]][current_pos[0]] = ' '
                             player_pos[0], player_pos[1] = last_pos
                             level[last_pos[1]][last_pos[0]] = PLAYER
-                    ########################
-                    ######## PHASE 2 #######
-                    ########################
+
         screen.fill(WHITE)
         if game_state == STATE_MENU:
             show_menu()
@@ -264,10 +309,26 @@ def run():
         elif game_state == STATE_GAME:
             draw_level(level)
             draw_player()
-            pygame.display.flip()
+            display_timer(remaining_time)  # 남은 시간 표시
+
+        pygame.display.flip()
+
+        # 시간이 모두 소모되었는지 확인
+        if remaining_time <= 0:
+            is_defeat()
+            start_time = time.time()  # 패배 후 타이머 리셋
+
+        clock.tick(60)
 
     pygame.quit()
     sys.exit()
+
+def display_timer(remaining_time):
+    """Function to display the remaining time on the screen."""
+    font = pygame.font.SysFont(None, 50)
+    timer_message = font.render(f"Time left: {remaining_time} seconds", True, (0, 0, 0))
+    screen.blit(timer_message, (10, 10))
+
 
 if __name__ == "__main__":
     run()
