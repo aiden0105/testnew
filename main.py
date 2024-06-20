@@ -44,6 +44,15 @@ STATE_GAME = 1
 STATE_CONTROLS = 2
 game_state = STATE_MENU
 
+#######################
+####### PHASE 2 #######
+#######################
+# 플레이어 위치 이력 저장
+player_pos_history = deque()
+#######################
+####### PHASE 2 #######
+#######################
+
 # 맵 데이터
 level = []
 player_pos = [0, 0]
@@ -120,35 +129,50 @@ def draw_level(map_data):
 def draw_player():
     screen.blit(player_image, (player_pos[0] * tile_size, player_pos[1] * tile_size))
     
-#플레이어의 이동을 정의
+# 플레이어의 이동을 정의
 def move_player(dx, dy):
     global level
     global goal_count
+    global player_pos_history
+    
     new_x = player_pos[0] + dx
     new_y = player_pos[1] + dy
-    
-    if level[new_y][new_x] == " ":
-        # player가 있던 자리 공백으로 변환
-        level[player_pos[1]][player_pos[0]] = " "
-        #player 이동
+
+    # 이동 가능 여부 확인
+    if level[new_y][new_x] in ' .':  # 빈 공간이나 목표 지점
+        player_pos_history.append((player_pos[0], player_pos[1]))  # 현재 위치를 이력에 저장
         player_pos[0] = new_x
         player_pos[1] = new_y
-        level[player_pos[1]][player_pos[0]] = "@"
-    elif level[new_y][new_x] == '$':
+        level[player_pos[1]][player_pos[0]] = PLAYER
+        # 이전 위치를 빈 공간으로 설정
+        level[player_pos[1]-dy][player_pos[0]-dx] = FLOOR
+    elif level[new_y][new_x] == BOX:  # 상자가 있는 경우
         box_new_x = new_x + dx
         box_new_y = new_y + dy
-        if level[box_new_y][box_new_x] in " .":
-            level[new_y][new_x] = ' '
-            level[player_pos[1]][player_pos[0]] = " "
+        if level[box_new_y][box_new_x] in ' .':  # 상자 이동 가능 여부
+            player_pos_history.append((player_pos[0], player_pos[1]))  # 현재 위치를 이력에 저장
+            level[player_pos[1]][player_pos[0]] = FLOOR
             player_pos[0] = new_x
             player_pos[1] = new_y
-            level[player_pos[1]][player_pos[0]] = "@"
-            # 상자 이동
-            if level[box_new_y][box_new_x] == " ":
-                level[box_new_y][box_new_x] = '$'
-            elif level[box_new_y][box_new_x] == ".":
-                level[box_new_y][box_new_x] = '*'
-                goal_count -= 1
+            level[player_pos[1]][player_pos[0]] = PLAYER
+            level[box_new_y][box_new_x] = BOX_ON_GOAL if level[box_new_y][box_new_x] == GOAL else BOX
+
+
+#######################
+####### PHASE 2 #######
+#######################
+# 플레이어 이동 취소
+def undo_move():
+    global player_pos
+    if player_pos_history:
+        last_pos = player_pos_history.pop()
+        current_pos = (player_pos[0], player_pos[1])
+        player_pos[0], player_pos[1] = last_pos
+        level[current_pos[1]][current_pos[0]] = FLOOR
+        level[player_pos[1]][player_pos[0]] = PLAYER
+#######################
+####### PHASE 2 #######
+#######################
 
 #플레이어가 이겼는지 판단함
 def is_win():
@@ -201,30 +225,23 @@ def run():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if game_state == STATE_MENU:
-                    if event.key == pygame.K_RETURN:  # Enter 키를 눌러 게임 시작
-                        level, player_pos = generate_sokoban_map(10, 10, 3)
-                        game_state = STATE_GAME
-                    elif event.key == pygame.K_h:  # H 키를 눌러 조작법 안내
-                        game_state = STATE_CONTROLS
-                elif game_state == STATE_CONTROLS:
-                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
-                        game_state = STATE_MENU
+                    # 게임 시작 또는 조작 방법 화면 전환
                 elif game_state == STATE_GAME:
-                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
-                        game_state = STATE_MENU
+                    if event.key == pygame.K_ESCAPE:
+                        # 메뉴로 돌아가기
                     elif event.key == pygame.K_UP:
                         move_player(0, -1)
-                        is_win()
                     elif event.key == pygame.K_DOWN:
                         move_player(0, 1)
-                        is_win()
                     elif event.key == pygame.K_LEFT:
                         move_player(-1, 0)
-                        is_win()
                     elif event.key == pygame.K_RIGHT:
                         move_player(1, 0)
-                        is_win()
+                    elif event.key == pygame.K_BACKSPACE:
+                        undo_move()  # 이동 취소
+                    is_win()
 
+        # 화면 업데이트
         screen.fill(WHITE)
         if game_state == STATE_MENU:
             show_menu()
