@@ -154,16 +154,18 @@ def move_player(dx, dy):
             elif level[box_new_y][box_new_x] == ".":
                 level[box_new_y][box_new_x] = '*'
                 goal_count -= 1
-    ########################
-    ######## PHASE 2 #######
-    ########################
+########################
+######## PHASE 2 #######
+########################
     # 백스페이스로 행동 취소 구현
     if len(player_history) > 0 and pygame.key.get_pressed()[pygame.K_BACKSPACE]:
         last_pos = player_history.pop()
         level[player_pos[1]][player_pos[0]] = " "
         player_pos[0], player_pos[1] = last_pos
         level[last_pos[1]][last_pos[0]] = "@"
-
+########################
+######## PHASE 2 #######
+########################
 
 # 플레이어가 이겼는지 판단함
 def is_win():
@@ -228,6 +230,18 @@ def run():
                 elif game_state == STATE_GAME:
                     if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
                         game_state = STATE_MENU
+                    elif event.key == pygame.K_UP:
+                        move_player(0, -1)
+                        is_win()
+                    elif event.key == pygame.K_DOWN:
+                        move_player(0, 1)
+                        is_win()
+                    elif event.key == pygame.K_LEFT:
+                        move_player(-1, 0)
+                        is_win()
+                    elif event.key == pygame.K_RIGHT:
+                        move_player(1, 0)
+                        is_win()
                     ########################
                     ######## PHASE 2 #######
                     ########################
@@ -239,11 +253,9 @@ def run():
                             level[current_pos[1]][current_pos[0]] = ' '
                             player_pos[0], player_pos[1] = last_pos
                             level[last_pos[1]][last_pos[0]] = PLAYER
-                    elif event.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT):
-                        move_dir = DIRS[event.key - pygame.K_UP]
-                        move_player(*move_dir)
-                        is_win()
-
+                    ########################
+                    ######## PHASE 2 #######
+                    ########################
         screen.fill(WHITE)
         if game_state == STATE_MENU:
             show_menu()
