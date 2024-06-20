@@ -74,6 +74,12 @@ def place_player_and_goals(map_data, num_goals):
         goals.append(goal_pos)
     return player_pos, goals
 
+#대상 위치가 벽에 붙어있는지 확인
+def is_adjacent_to_wall(y, x, map_data):
+    """Check if the position (y, x) is adjacent to a wall."""
+    adjacent_positions = [(y-1, x), (y+1, x), (y, x-1), (y, x+1)]
+    return any(map_data[ny][nx] == WALL for ny, nx in adjacent_positions)
+    
 #벽에 붙어있지 않은 빈 공간에 상자를 위치
 def place_boxes(map_data, goals):
     global goal_count
@@ -87,6 +93,32 @@ def place_boxes(map_data, goals):
         goal_count += 1
     
     return map_data
+# 맵을 자동으로 생성함
+def generate_sokoban_map(width, height, num_goals):
+    global player_pos
+    while True:
+        map_data = create_empty_map(width, height)
+        player_pos, goals = place_player_and_goals(map_data, num_goals)
+        map_data = place_boxes(map_data, goals)
+        return map_data, player_pos
+
+# 화면에 레벨을 표시함
+def draw_level(map_data):
+    for y, row in enumerate(map_data):
+        for x, tile in enumerate(row):
+            screen.blit(floor_image, (x * tile_size, y * tile_size))
+            if tile == WALL:
+                screen.blit(wall_image, (x * tile_size, y * tile_size))
+            elif tile == GOAL:
+                screen.blit(goal_image, (x * tile_size, y * tile_size))
+            elif tile == BOX:
+                screen.blit(box_image, (x * tile_size, y * tile_size))
+            elif tile == BOX_ON_GOAL:
+                screen.blit(box_on_goal_image, (x * tile_size, y * tile_size))
+                
+#화면에 플레이어를 표시함
+def draw_player():
+    screen.blit(player_image, (player_pos[0] * tile_size, player_pos[1] * tile_size))
 
 # 플레이어의 이동을 정의
 def move_player(dx, dy):
