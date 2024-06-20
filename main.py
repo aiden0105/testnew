@@ -85,7 +85,7 @@ def choose_difficulty():
     elif choice == '2':
         game_timer = 30
         difficulty = 'normal'
-    elif choice == '3
+    elif choice == '3':
         game_timer = 15
         difficulty = 'hard'
     else:
