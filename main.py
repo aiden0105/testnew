@@ -44,19 +44,11 @@ STATE_GAME = 1
 STATE_CONTROLS = 2
 game_state = STATE_MENU
 
-#######################
-####### PHASE 2 #######
-#######################
-# 플레이어 위치 이력 저장
-player_pos_history = deque()
-#######################
-####### PHASE 2 #######
-#######################
-
 # 맵 데이터
 level = []
 player_pos = [0, 0]
 goal_count = 0
+player_history = deque()  # Stack to store player positions
 
 #비어있는 맵을 생성
 def create_empty_map(width, height):
@@ -82,12 +74,6 @@ def place_player_and_goals(map_data, num_goals):
         goals.append(goal_pos)
     return player_pos, goals
 
-#대상 위치가 벽에 붙어있는지 확인
-def is_adjacent_to_wall(y, x, map_data):
-    """Check if the position (y, x) is adjacent to a wall."""
-    adjacent_positions = [(y-1, x), (y+1, x), (y, x-1), (y, x+1)]
-    return any(map_data[ny][nx] == WALL for ny, nx in adjacent_positions)
-
 #벽에 붙어있지 않은 빈 공간에 상자를 위치
 def place_boxes(map_data, goals):
     global goal_count
@@ -102,79 +88,52 @@ def place_boxes(map_data, goals):
     
     return map_data
 
-# 맵을 자동으로 생성함
-def generate_sokoban_map(width, height, num_goals):
-    global player_pos
-    while True:
-        map_data = create_empty_map(width, height)
-        player_pos, goals = place_player_and_goals(map_data, num_goals)
-        map_data = place_boxes(map_data, goals)
-        return map_data, player_pos
-
-# 화면에 레벨을 표시함
-def draw_level(map_data):
-    for y, row in enumerate(map_data):
-        for x, tile in enumerate(row):
-            screen.blit(floor_image, (x * tile_size, y * tile_size))
-            if tile == WALL:
-                screen.blit(wall_image, (x * tile_size, y * tile_size))
-            elif tile == GOAL:
-                screen.blit(goal_image, (x * tile_size, y * tile_size))
-            elif tile == BOX:
-                screen.blit(box_image, (x * tile_size, y * tile_size))
-            elif tile == BOX_ON_GOAL:
-                screen.blit(box_on_goal_image, (x * tile_size, y * tile_size))
-                
-#화면에 플레이어를 표시함
-def draw_player():
-    screen.blit(player_image, (player_pos[0] * tile_size, player_pos[1] * tile_size))
-    
 # 플레이어의 이동을 정의
 def move_player(dx, dy):
     global level
     global goal_count
-    global player_pos_history
-    
+    global player_history
+
     new_x = player_pos[0] + dx
     new_y = player_pos[1] + dy
 
-    # 이동 가능 여부 확인
-    if level[new_y][new_x] in ' .':  # 빈 공간이나 목표 지점
-        player_pos_history.append((player_pos[0], player_pos[1]))  # 현재 위치를 이력에 저장
+    if level[new_y][new_x] == " ":
+        # player가 있던 자리 공백으로 변환
+        level[player_pos[1]][player_pos[0]] = " "
+        # 현재 위치를 기록
+        player_history.append((player_pos[0], player_pos[1]))
+        # player 이동
         player_pos[0] = new_x
         player_pos[1] = new_y
-        level[player_pos[1]][player_pos[0]] = PLAYER
-        # 이전 위치를 빈 공간으로 설정
-        level[player_pos[1]-dy][player_pos[0]-dx] = FLOOR
-    elif level[new_y][new_x] == BOX:  # 상자가 있는 경우
+        level[player_pos[1]][player_pos[0]] = "@"
+    elif level[new_y][new_x] == '$':
         box_new_x = new_x + dx
         box_new_y = new_y + dy
-        if level[box_new_y][box_new_x] in ' .':  # 상자 이동 가능 여부
-            player_pos_history.append((player_pos[0], player_pos[1]))  # 현재 위치를 이력에 저장
-            level[player_pos[1]][player_pos[0]] = FLOOR
+        if level[box_new_y][box_new_x] in " .":
+            level[new_y][new_x] = ' '
+            level[player_pos[1]][player_pos[0]] = " "
+            player_history.append((player_pos[0], player_pos[1]))
             player_pos[0] = new_x
             player_pos[1] = new_y
-            level[player_pos[1]][player_pos[0]] = PLAYER
-            level[box_new_y][box_new_x] = BOX_ON_GOAL if level[box_new_y][box_new_x] == GOAL else BOX
-
-
-#######################
-####### PHASE 2 #######
-#######################
-# 플레이어 이동 취소
-def undo_move():
-    global player_pos
-    if player_pos_history:
-        last_pos = player_pos_history.pop()
-        current_pos = (player_pos[0], player_pos[1])
+            level[player_pos[1]][player_pos[0]] = "@"
+            # 상자 이동
+            if level[box_new_y][box_new_x] == " ":
+                level[box_new_y][box_new_x] = '$'
+            elif level[box_new_y][box_new_x] == ".":
+                level[box_new_y][box_new_x] = '*'
+                goal_count -= 1
+    ########################
+    ######## PHASE 2 #######
+    ########################
+    # 백스페이스로 행동 취소 구현
+    if len(player_history) > 0 and pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+        last_pos = player_history.pop()
+        level[player_pos[1]][player_pos[0]] = " "
         player_pos[0], player_pos[1] = last_pos
-        level[current_pos[1]][current_pos[0]] = FLOOR
-        level[player_pos[1]][player_pos[0]] = PLAYER
-#######################
-####### PHASE 2 #######
-#######################
+        level[last_pos[1]][last_pos[0]] = "@"
 
-#플레이어가 이겼는지 판단함
+
+# 플레이어가 이겼는지 판단함
 def is_win():
     global goal_count
     if goal_count == 0:
@@ -187,8 +146,9 @@ def is_win():
 
 #새로운 맵을 생성하여 게임 리셋
 def reset_game():
-    global level, player_pos
+    global level, player_pos, player_history
     level, player_pos = generate_sokoban_map(10, 10, 3)
+    player_history.clear()
 
 #시작 메뉴를 표시
 def show_menu():
@@ -230,25 +190,27 @@ def run():
                         game_state = STATE_GAME
                     elif event.key == pygame.K_h:  # H 키를 눌러 조작법 안내
                         game_state = STATE_CONTROLS
-                    else:
-                        pass
                 elif game_state == STATE_CONTROLS:
                     if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
                         game_state = STATE_MENU
                 elif game_state == STATE_GAME:
                     if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
                         game_state = STATE_MENU
-                    elif event.key == pygame.K_UP:
-                        move_player(0, -1)
-                    elif event.key == pygame.K_DOWN:
-                        move_player(0, 1)
-                    elif event.key == pygame.K_LEFT:
-                        move_player(-1, 0)
-                    elif event.key == pygame.K_RIGHT:
-                        move_player(1, 0)
+                    ########################
+                    ######## PHASE 2 #######
+                    ########################
+                    # 행동 취소
                     elif event.key == pygame.K_BACKSPACE:
-                        undo_move()  # 플레이어의 동작을 취소
-                    is_win()
+                        if player_history:
+                            last_pos = player_history.pop()
+                            current_pos = (player_pos[0], player_pos[1])
+                            level[current_pos[1]][current_pos[0]] = ' '
+                            player_pos[0], player_pos[1] = last_pos
+                            level[last_pos[1]][last_pos[0]] = PLAYER
+                    elif event.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT):
+                        move_dir = DIRS[event.key - pygame.K_UP]
+                        move_player(*move_dir)
+                        is_win()
 
         screen.fill(WHITE)
         if game_state == STATE_MENU:
