@@ -51,6 +51,7 @@ player_pos = [0, 0]
 goal_count = 0
 player_history = deque()  # 플레이어의 위치 정보 저장
 
+
 ########################
 ######## PHASE 2 #######
 ########################
@@ -93,6 +94,7 @@ def choose_difficulty():
 ########################
 ######## PHASE 2 #######
 ########################
+
 
 #비어있는 맵을 생성
 def create_empty_map(width, height):
@@ -272,17 +274,17 @@ def run():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if game_state == STATE_MENU:
-                    if event.key == pygame.K_RETURN:
+                    if event.key == pygame.K_RETURN:  # Enter 키를 눌러 게임 시작
                         level, player_pos = generate_sokoban_map(10, 10, 3)
                         game_state = STATE_GAME
-                    elif event.key == pygame.K_h:
+                    elif event.key == pygame.K_h:  # H 키를 눌러 조작법 안내
                         game_state = STATE_CONTROLS
                 elif game_state == STATE_CONTROLS:
-                    if event.key == pygame.K_ESCAPE:
+                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
                         game_state = STATE_MENU
                         reset_game()
                 elif game_state == STATE_GAME:
-                    if event.key == pygame.K_ESCAPE:
+                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
                         game_state = STATE_MENU
                         reset_game()
                     elif event.key == pygame.K_UP:
@@ -297,6 +299,10 @@ def run():
                     elif event.key == pygame.K_RIGHT:
                         move_player(1, 0)
                         is_win()
+                    ########################
+                    ######## PHASE 2 #######
+                    ########################
+                    # 행동 취소
                     elif event.key == pygame.K_BACKSPACE:
                         if player_history:
                             last_pos = player_history.pop()
@@ -304,7 +310,9 @@ def run():
                             level[current_pos[1]][current_pos[0]] = ' '
                             player_pos[0], player_pos[1] = last_pos
                             level[last_pos[1]][last_pos[0]] = PLAYER
-
+                    ########################
+                    ######## PHASE 2 #######
+                    ########################
         screen.fill(WHITE)
         if game_state == STATE_MENU:
             show_menu()
@@ -324,13 +332,6 @@ def run():
 
     pygame.quit()
     sys.exit()
-
-def display_timer(remaining_time):
-    """Function to display the remaining time on the screen."""
-    font = pygame.font.SysFont(None, 50)
-    timer_message = font.render(f"Time left: {remaining_time} seconds", True, (0, 0, 0))
-    screen.blit(timer_message, (10, 10))
-
 
 if __name__ == "__main__":
     run()
