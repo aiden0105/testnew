@@ -214,19 +214,22 @@ def move_player(dx, dy):
 # 플레이어가 이겼는지 판단함
 def is_win():
     global goal_count
-    if goal_count == 0:
+    # Check all map tiles for boxes on goal condition
+    boxes_on_goals = sum(1 for row in level for tile in row if tile == BOX_ON_GOAL)
+    if boxes_on_goals == goal_count:
         font = pygame.font.SysFont(None, 100)
         text = font.render("YOU WIN!", True, (255, 0, 0))
         screen.blit(text, (screen_width // 2 - 200, screen_height // 2 - 50))
         pygame.display.flip()
-        pygame.time.wait(2000)  # 2초간 대기
-        reset_game()  # 게임 초기화 함수 호출
+        pygame.time.wait(2000)
+        reset_game()
 
 #새로운 맵을 생성하여 게임 리셋
 def reset_game():
-    global level, player_pos, player_history
+    global level, player_pos, player_history, start_time, game_timer
     level, player_pos = generate_sokoban_map(10, 10, 3)
     player_history.clear()
+    start_time = time.time()
 
 #시작 메뉴를 표시
 def show_menu():
@@ -257,8 +260,7 @@ def run():
     global level, game_state, start_time
     running = True
     clock = pygame.time.Clock()
-    choose_difficulty()  # 플레이어의 난이도 선택 및 타이머 설정
-    start_time = time.time()
+    choose_difficulty()  # Allow player to choose difficulty
 
     while running:
         current_time = time.time()
@@ -270,17 +272,19 @@ def run():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if game_state == STATE_MENU:
-                    if event.key == pygame.K_RETURN:  # Enter 키를 눌러 게임 시작
+                    if event.key == pygame.K_RETURN:
                         level, player_pos = generate_sokoban_map(10, 10, 3)
                         game_state = STATE_GAME
-                    elif event.key == pygame.K_h:  # H 키를 눌러 조작법 안내
+                    elif event.key == pygame.K_h:
                         game_state = STATE_CONTROLS
                 elif game_state == STATE_CONTROLS:
-                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
+                    if event.key == pygame.K_ESCAPE:
                         game_state = STATE_MENU
+                        reset_game()
                 elif game_state == STATE_GAME:
-                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
+                    if event.key == pygame.K_ESCAPE:
                         game_state = STATE_MENU
+                        reset_game()
                     elif event.key == pygame.K_UP:
                         move_player(0, -1)
                         is_win()
@@ -309,14 +313,12 @@ def run():
         elif game_state == STATE_GAME:
             draw_level(level)
             draw_player()
-            display_timer(remaining_time)  # 남은 시간 표시
+            display_timer(remaining_time)
 
         pygame.display.flip()
 
-        # 시간이 모두 소모되었는지 확인
         if remaining_time <= 0:
             is_defeat()
-            start_time = time.time()  # 패배 후 타이머 리셋
 
         clock.tick(60)
 
