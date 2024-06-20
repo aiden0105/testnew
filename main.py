@@ -225,10 +225,19 @@ def run():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if game_state == STATE_MENU:
-                    # 게임 시작 또는 조작 방법 화면 전환
+                    if event.key == pygame.K_RETURN:  # Enter 키를 눌러 게임 시작
+                        level, player_pos = generate_sokoban_map(10, 10, 3)
+                        game_state = STATE_GAME
+                    elif event.key == pygame.K_h:  # H 키를 눌러 조작법 안내
+                        game_state = STATE_CONTROLS
+                    else:
+                        pass
+                elif game_state == STATE_CONTROLS:
+                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
+                        game_state = STATE_MENU
                 elif game_state == STATE_GAME:
-                    if event.key == pygame.K_ESCAPE:
-                        # 메뉴로 돌아가기
+                    if event.key == pygame.K_ESCAPE:  # ESC 키를 눌러 메뉴로 돌아감
+                        game_state = STATE_MENU
                     elif event.key == pygame.K_UP:
                         move_player(0, -1)
                     elif event.key == pygame.K_DOWN:
@@ -238,10 +247,9 @@ def run():
                     elif event.key == pygame.K_RIGHT:
                         move_player(1, 0)
                     elif event.key == pygame.K_BACKSPACE:
-                        undo_move()  # 이동 취소
+                        undo_move()  # 플레이어의 동작을 취소
                     is_win()
 
-        # 화면 업데이트
         screen.fill(WHITE)
         if game_state == STATE_MENU:
             show_menu()
