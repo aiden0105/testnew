@@ -48,7 +48,7 @@ game_state = STATE_MENU
 level = []
 player_pos = [0, 0]
 goal_count = 0
-player_history = deque()  # Stack to store player positions
+player_history = deque()  # 플레이어의 위치 정보 저장
 
 #비어있는 맵을 생성
 def create_empty_map(width, height):
